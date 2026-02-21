@@ -8,6 +8,8 @@ find_package(pybind11 REQUIRED)
 find_package(OpenMP REQUIRED)
 
 pybind11_add_module(colss binding.cpp)
+
 target_link_libraries(colss PRIVATE OpenMP::OpenMP_CXX)
+target_include_directories(colss PRIVATE ${CMAKE_SOURCE_DIR}/fun)
 
 install(TARGETS colss DESTINATION .)
