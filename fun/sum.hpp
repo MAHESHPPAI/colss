@@ -8,7 +8,7 @@
 using namespace std;
 namespace py = pybind11;
 
-double sigma(string expr, py::args headers_and_arr) {
+inline double sigma(string expr, py::args headers_and_arr) {
     using T = double;
 
     size_t n_vars = headers_and_arr.size();

@@ -4,6 +4,7 @@ project(colss LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON) #remove during build
 find_package(pybind11 REQUIRED)
 find_package(OpenMP REQUIRED)
 
