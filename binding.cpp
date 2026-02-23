@@ -1,6 +1,6 @@
-#include "fun/sum.hpp"
+#include "fun/sigma.hpp"
 #include <pybind11/pybind11.h>
 
 namespace py = pybind11;
 
-PYBIND11_MODULE(colss, m) { m.def("sigma", &sigma, py::arg("expr")); }
+PYBIND11_MODULE(_colss, m) { m.def("sigma", &sigma, py::arg("expr")); }
