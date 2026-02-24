@@ -47,4 +47,4 @@ jobs:
             # Run test_colss.py explicitly
             - name: Run tests
               run: |
-                  pytest -v test_colss.py
+                  pytest -v
