@@ -70,10 +70,7 @@ def test_logical_expression():
     a = np.array([1., 2., 3., 4.])
     b = np.array([4., 3., 2., 1.])
 
-    # Wrap logical in ternary to ensure numeric output
-    expr = "((a > 2) && (b < 3)) ? 1 : 0"
-
-    result = colss.query(expr)
+    result = colss.query("((a > 2) and (b < 3)) ? 1 : 0")
     expected = np.where((a > 2) & (b < 3), 1.0, 0.0)
 
     assert np.allclose(result, expected)
