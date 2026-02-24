@@ -42,6 +42,14 @@ if(APPLE)
     endif()
 endif()
 
+# Add Windows-specific OpenMP SIMD support BEFORE find_package(OpenMP)
+if(MSVC)
+    # Enable OpenMP with SIMD support for MSVC
+    add_compile_options(/openmp:experimental)
+    # Optional: Set OpenMP version (if needed)
+    # add_compile_options(/openmp:experimental /openmp:llvm)  # For newer MSVC versions
+endif()
+
 find_package(OpenMP REQUIRED)
 
 pybind11_add_module(_colss binding.cpp)
@@ -56,11 +64,16 @@ elseif(APPLE AND OpenMP_omp_LIBRARY)
     target_link_libraries(_colss PRIVATE ${OpenMP_omp_LIBRARY})
 endif()
 
+# Ensure Windows OpenMP SIMD flags are applied to the target
+if(MSVC)
+    target_compile_options(_colss PRIVATE /openmp:experimental)
+endif()
+
 target_include_directories(_colss PRIVATE ${CMAKE_SOURCE_DIR}/include)
 
 # Compiler-specific optimization (portable)
 if(MSVC)
-    target_compile_options(_colss PRIVATE /O2)
+    target_compile_options(_colss PRIVATE /O2 /openmp:experimental)
 else()
     target_compile_options(_colss PRIVATE -O3 -march=native -mtune=native)
 endif()

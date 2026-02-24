@@ -31,9 +31,8 @@ jobs:
             - name: Set up OpenMP on Windows
               if: runner.os == 'Windows'
               run: |
-                  # OpenMP is usually included with MSVC, but we can install additional libraries if needed
-                  choco install -y llvm
-                  echo "OpenMP_ROOT=C:\Program Files\LLVM" >> $env:GITHUB_ENV
+                  # No additional setup needed - CMakeLists.txt handles OpenMP SIMD flags
+                  echo "OpenMP is built into MSVC"
             - name: Build wheels
               uses: pypa/cibuildwheel@v2.22
               env:
@@ -46,14 +45,15 @@ jobs:
                       CFLAGS="$CFLAGS"
                       CXXFLAGS="$CXXFLAGS"
                       LDFLAGS="$LDFLAGS"
-                  # For other platforms, use the regular environment
+                  # For Linux
                   CIBW_ENVIRONMENT_LINUX: >
                       CMAKE_ARGS="-DCMAKE_BUILD_TYPE=Release -DOpenMP_ROOT=$OpenMP_ROOT"
                       CFLAGS="$CFLAGS"
                       CXXFLAGS="$CXXFLAGS"
                       LDFLAGS="$LDFLAGS"
+                  # For Windows - minimal flags, let CMake handle OpenMP SIMD
                   CIBW_ENVIRONMENT_WINDOWS: >
-                      CMAKE_ARGS="-DCMAKE_BUILD_TYPE=Release -DOpenMP_ROOT='$OpenMP_ROOT'"
+                      CMAKE_ARGS="-DCMAKE_BUILD_TYPE=Release"
             - name: Store wheels
               uses: actions/upload-artifact@v4
               with:
