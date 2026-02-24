@@ -82,5 +82,5 @@ inline double mean(string expr, py::kwargs arrays) {
         }
     }
 
-    return share / n_vars;
+    return share / n;
 }
