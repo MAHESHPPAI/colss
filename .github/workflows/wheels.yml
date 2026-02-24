@@ -1,43 +1,51 @@
 name: Build and Publish Wheels
-
 on:
     push:
         tags:
             - "v*"
-
 jobs:
     build:
         runs-on: ${{ matrix.os }}
         strategy:
             matrix:
                 os: [ubuntu-latest, windows-latest, macos-latest]
-
+                include:
+                    - os: macos-latest
+                      OPENMP_ROOT: /opt/homebrew/opt/libomp
         steps:
             - uses: actions/checkout@v4
 
+            - name: Setup OpenMP on macOS
+              if: runner.os == 'macOS'
+              run: |
+                  brew install libomp
+                  echo "OpenMP_ROOT=$(brew --prefix libomp)" >> $GITHUB_ENV
+
             - name: Build wheels
-              uses: pypa/cibuildwheel@v2.16
+              uses: pypa/cibuildwheel@v2.22
               env:
                   CIBW_BUILD: cp39-* cp310-* cp311-* cp312-* cp313-*
-                  CIBW_SKIP: "*-musllinux*"
+                  CIBW_SKIP: "*-musllinux* *i686* *win32*"
 
-                  # Ensure release build
-                  CIBW_ENVIRONMENT: >
-                      CMAKE_ARGS="-DCMAKE_BUILD_TYPE=Release"
+                  # Global build requirements
+                  CIBW_BEFORE_ALL: >
+                      pip install scikit-build-core pybind11
 
-                  # ---- macOS OpenMP Fix ----
-                  # Install libomp before build
-                  CIBW_BEFORE_BUILD_MACOS: brew install libomp
-
-                  # Tell clang where libomp lives (Apple Silicon path)
+                  # macOS specific setup - using the env var we set
                   CIBW_ENVIRONMENT_MACOS: >
-                      CPPFLAGS="-I/opt/homebrew/opt/libomp/include"
-                      LDFLAGS="-L/opt/homebrew/opt/libomp/lib"
-                      CMAKE_ARGS="-DCMAKE_BUILD_TYPE=Release"
+                      CMAKE_ARGS="-DCMAKE_BUILD_TYPE=Release -DOpenMP_ROOT=$OpenMP_ROOT"
+                      CFLAGS="-I$OpenMP_ROOT/include -Xpreprocessor -fopenmp"
+                      CXXFLAGS="-I$OpenMP_ROOT/include -Xpreprocessor -fopenmp"
+                      LDFLAGS="-L$OpenMP_ROOT/lib -lomp"
+
+                  # Linux specific (if needed)
+                  CIBW_BEFORE_ALL_LINUX: >
+                      yum install -y openmp-devel || apt-get install -y libomp-dev
 
             - name: Store wheels
               uses: actions/upload-artifact@v4
               with:
+                  name: wheels-${{ matrix.os }}
                   path: wheelhouse/*.whl
 
     publish:
@@ -45,10 +53,11 @@ jobs:
         runs-on: ubuntu-latest
         permissions:
             id-token: write
-
         steps:
             - uses: actions/download-artifact@v4
               with:
+                  pattern: wheels-*
+                  merge-multiple: true
                   path: dist
 
             - name: Publish to PyPI

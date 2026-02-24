@@ -6,6 +6,42 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 find_package(pybind11 REQUIRED)
+
+# Better OpenMP handling for macOS
+if(APPLE)
+    # Check if we're using AppleClang
+    if(CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
+        # For AppleClang, we need to use OpenMP from Homebrew
+        set(OpenMP_CXX_FLAGS "-Xpreprocessor -fopenmp")
+        set(OpenMP_CXX_LIB_NAMES "omp")
+        set(OpenMP_omp_LIBRARY "omp")
+        
+        # Try to find Homebrew's libomp
+        find_library(OpenMP_omp_LIBRARY
+            NAMES omp
+            HINTS /opt/homebrew/opt/libomp/lib /usr/local/opt/libomp/lib
+            PATHS /opt/homebrew/opt/libomp/lib /usr/local/opt/libomp/lib
+            NO_DEFAULT_PATH
+        )
+        
+        if(OpenMP_omp_LIBRARY)
+            message(STATUS "Found OpenMP library: ${OpenMP_omp_LIBRARY}")
+            set(OpenMP_CXX_LIBRARIES ${OpenMP_omp_LIBRARY})
+            
+            # Set include directory
+            find_path(OpenMP_CXX_INCLUDE_DIR
+                NAMES omp.h
+                HINTS /opt/homebrew/opt/libomp/include /usr/local/opt/libomp/include
+                PATHS /opt/homebrew/opt/libomp/include /usr/local/opt/libomp/include
+                NO_DEFAULT_PATH
+            )
+            if(OpenMP_CXX_INCLUDE_DIR)
+                set(OpenMP_CXX_INCLUDE_DIRS ${OpenMP_CXX_INCLUDE_DIR})
+            endif()
+        endif()
+    endif()
+endif()
+
 find_package(OpenMP REQUIRED)
 
 pybind11_add_module(_colss binding.cpp)
@@ -13,6 +49,11 @@ pybind11_add_module(_colss binding.cpp)
 # Link OpenMP properly (portable way)
 if(OpenMP_CXX_FOUND)
     target_link_libraries(_colss PRIVATE OpenMP::OpenMP_CXX)
+elseif(APPLE AND OpenMP_omp_LIBRARY)
+    # Fallback for older CMake versions or tricky setups
+    target_compile_options(_colss PRIVATE -Xpreprocessor -fopenmp)
+    target_include_directories(_colss PRIVATE ${OpenMP_CXX_INCLUDE_DIRS})
+    target_link_libraries(_colss PRIVATE ${OpenMP_omp_LIBRARY})
 endif()
 
 target_include_directories(_colss PRIVATE ${CMAKE_SOURCE_DIR}/include)
@@ -21,7 +62,7 @@ target_include_directories(_colss PRIVATE ${CMAKE_SOURCE_DIR}/include)
 if(MSVC)
     target_compile_options(_colss PRIVATE /O2)
 else()
-    target_compile_options(_colss PRIVATE -O3)
+    target_compile_options(_colss PRIVATE -O3 -march=native -mtune=native)
 endif()
 
 install(TARGETS _colss DESTINATION colss)
