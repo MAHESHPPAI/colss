@@ -1,6 +1,6 @@
 # colss
 
-colss is a lightweight C++-powered expression engine exposed to Python using pybind11. It evaluates mathematical expressions over NumPy arrays with fast element-wise execution.
+colss is a lightweight expression evaluator for NumPy, Pandas, and Polars. It simplifies mathematical expressions while preserving memory efficiency and execution speed through a compiled C++ backend.
 
 ---
 
@@ -44,67 +44,42 @@ a = a.ravel()
 
 All functions accept string expressions.
 
----
-
-## 1. query
+## query
 
 ```
 import numpy as np
 import colss
 
-# Input arrays
 a = np.array([1.0, 2.0, 3.0], dtype=np.float64)
 b = np.array([4.0, 5.0, 6.0], dtype=np.float64)
 
 result = colss.query("a+b+7")
-print(result)
 ```
 
-```
-[12. 14. 16.]
-```
-
----
-
-### Ternary Example
+Ternary example:
 
 ```
-result = colss.query("a > 1 ? 100 : 0")
-print(result)
+colss.query("a > 1 ? 100 : 0")
 ```
 
-```
-[  0. 100. 100.]
-```
-
----
-
-### Using Mathematical Functions
+Using mathematical functions:
 
 ```
-result = colss.query("sqrt(a) + sin(a)")
-print(result)
-```
-
-Example using exponential:
-
-```
+colss.query("sqrt(a) + sin(a)")
 colss.query("exp(a)")
 ```
 
 ---
 
-## 2. mean
+## mean
 
 ```
+import numpy as np
+import colss
+
 a = np.array([1.0, 2.0, 3.0, 4.0], dtype=np.float64)
 
 m = colss.mean("a")
-print(m)
-```
-
-```
-2.5
 ```
 
 Expression example:
@@ -115,17 +90,15 @@ colss.mean("a+10")
 
 ---
 
-## 3. sigma (Standard Deviation)
+## sigma (Standard Deviation)
 
 ```
+import numpy as np
+import colss
+
 a = np.array([1.0, 2.0, 3.0, 4.0], dtype=np.float64)
 
 s = colss.sigma("a")
-print(s)
-```
-
-```
-1.118033988749895
 ```
 
 Expression example:
@@ -136,17 +109,15 @@ colss.sigma("a*2")
 
 ---
 
-## 4. prod (Product)
+## prod (Product)
 
 ```
+import numpy as np
+import colss
+
 a = np.array([1.0, 2.0, 3.0, 4.0], dtype=np.float64)
 
 p = colss.prod("a")
-print(p)
-```
-
-```
-24.0
 ```
 
 Expression example:
@@ -187,8 +158,6 @@ condition ? value_if_true : value_if_false
 
 # Available Functions Inside Expressions
 
-The following functions can be used inside `colss.query()` expressions:
-
 ```
 abs(x)
 sqrt(x)
@@ -205,51 +174,34 @@ min(x, y)
 max(x, y)
 ```
 
-pi
-e
-
-```
-
 ---
 
 # Using with Pandas
 
 ```
-
 import pandas as pd
 import numpy as np
 import colss
 
-# Create DataFrame
-
-df = pd.DataFrame({
-"a": [1.0, 2.0, 3.0],
-"b": [4.0, 5.0, 6.0]
+ df = pd.DataFrame({
+    "a": [1.0, 2.0, 3.0],
+    "b": [4.0, 5.0, 6.0]
 })
 
 # Pandas evaluation
-
-df["c"] = df.eval("a + b + 7")
+ df["c"] = df.eval("a + b + 7")
 
 # colss evaluation
+ a = df["a"].to_numpy(dtype=np.float64)
+ b = df["b"].to_numpy(dtype=np.float64)
 
-a = df["a"].to_numpy(dtype=np.float64)
-b = df["b"].to_numpy(dtype=np.float64)
-
-df["d"] = colss.query("a+b+7")
-
-print(df)
-
+ df["d"] = colss.query("a+b+7")
 ```
-
-Columns `c` and `d` will match.
 
 ---
 
 # Notes
 
-- All variables used in expressions must be registered inside colss before evaluation.
-- All functions (`query`, `mean`, `sigma`, `prod`) accept string expressions.
-- Handle NaN values carefully when required.
-
-```
+* All variables used in expressions must be registered inside colss before evaluation.
+* All functions (`query`, `mean`, `sigma`, `prod`) accept string expressions.
+* Designed for memory efficiency and predictable performance.
