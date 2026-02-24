@@ -10,16 +10,19 @@ find_package(OpenMP REQUIRED)
 
 pybind11_add_module(_colss binding.cpp)
 
-target_link_libraries(_colss PRIVATE OpenMP::OpenMP_CXX)
+# Link OpenMP properly (portable way)
+if(OpenMP_CXX_FOUND)
+    target_link_libraries(_colss PRIVATE OpenMP::OpenMP_CXX)
+endif()
 
 target_include_directories(_colss PRIVATE ${CMAKE_SOURCE_DIR}/include)
 
-target_compile_options(_colss PRIVATE
-    -O3
-    -march=native
-    -ffast-math
-    -funroll-loops
-)
+# Compiler-specific optimization (portable)
+if(MSVC)
+    target_compile_options(_colss PRIVATE /O2)
+else()
+    target_compile_options(_colss PRIVATE -O3)
+endif()
 
 install(TARGETS _colss DESTINATION colss)
 install(FILES ${CMAKE_SOURCE_DIR}/colss/__init__.py DESTINATION colss)
