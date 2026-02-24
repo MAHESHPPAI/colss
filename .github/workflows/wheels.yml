@@ -12,14 +12,12 @@ jobs:
                 python: [cp39, cp310, cp311, cp312, cp313]
         steps:
             - uses: actions/checkout@v4
-
             - name: Set up OpenMP on Linux
               if: runner.os == 'Linux'
               run: |
                   sudo apt-get update
                   sudo apt-get install -y libomp-dev
                   echo "OpenMP_ROOT=/usr/lib/llvm-*/lib/cmake/openmp" >> $GITHUB_ENV
-
             - name: Set up OpenMP on macOS
               if: runner.os == 'macOS'
               run: |
@@ -28,33 +26,39 @@ jobs:
                   echo "CFLAGS=-I$(brew --prefix libomp)/include -Xpreprocessor -fopenmp" >> $GITHUB_ENV
                   echo "CXXFLAGS=-I$(brew --prefix libomp)/include -Xpreprocessor -fopenmp" >> $GITHUB_ENV
                   echo "LDFLAGS=-L$(brew --prefix libomp)/lib -lomp" >> $GITHUB_ENV
-
+                  # Set macOS deployment target to match libomp
+                  echo "MACOSX_DEPLOYMENT_TARGET=15.0" >> $GITHUB_ENV
             - name: Set up OpenMP on Windows
               if: runner.os == 'Windows'
               run: |
                   # OpenMP is usually included with MSVC, but we can install additional libraries if needed
                   choco install -y llvm
                   echo "OpenMP_ROOT=C:\Program Files\LLVM" >> $env:GITHUB_ENV
-
             - name: Build wheels
               uses: pypa/cibuildwheel@v2.22
               env:
                   CIBW_BUILD: ${{ matrix.python }}-*
                   CIBW_SKIP: "*-musllinux* *i686* *win32*"
-
-                  # Pass the OpenMP environment variables
-                  CIBW_ENVIRONMENT: >
+                  # Set macOS deployment target for all macOS builds
+                  CIBW_ENVIRONMENT_MACOS: >
+                      MACOSX_DEPLOYMENT_TARGET=15.0
                       CMAKE_ARGS="-DCMAKE_BUILD_TYPE=Release -DOpenMP_ROOT=$OpenMP_ROOT"
                       CFLAGS="$CFLAGS"
                       CXXFLAGS="$CXXFLAGS"
                       LDFLAGS="$LDFLAGS"
-
+                  # For other platforms, use the regular environment
+                  CIBW_ENVIRONMENT_LINUX: >
+                      CMAKE_ARGS="-DCMAKE_BUILD_TYPE=Release -DOpenMP_ROOT=$OpenMP_ROOT"
+                      CFLAGS="$CFLAGS"
+                      CXXFLAGS="$CXXFLAGS"
+                      LDFLAGS="$LDFLAGS"
+                  CIBW_ENVIRONMENT_WINDOWS: >
+                      CMAKE_ARGS="-DCMAKE_BUILD_TYPE=Release -DOpenMP_ROOT='$OpenMP_ROOT'"
             - name: Store wheels
               uses: actions/upload-artifact@v4
               with:
                   name: wheels-${{ runner.os }}-${{ matrix.python }}
                   path: wheelhouse/*.whl
-
     publish:
         needs: build
         runs-on: ubuntu-latest
@@ -66,10 +70,8 @@ jobs:
                   pattern: wheels-*
                   merge-multiple: true
                   path: dist
-
             - name: Display structure of downloaded files
               run: ls -R dist/
-
             - name: Publish to PyPI
               uses: pypa/gh-action-pypi-publish@release/v1
               with:
