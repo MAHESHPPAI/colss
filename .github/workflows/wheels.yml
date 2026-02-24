@@ -9,43 +9,50 @@ jobs:
         strategy:
             matrix:
                 os: [ubuntu-latest, windows-latest, macos-latest]
-                include:
-                    - os: macos-latest
-                      OPENMP_ROOT: /opt/homebrew/opt/libomp
+                python: [cp39, cp310, cp311, cp312, cp313]
         steps:
             - uses: actions/checkout@v4
 
-            - name: Setup OpenMP on macOS
+            - name: Set up OpenMP on Linux
+              if: runner.os == 'Linux'
+              run: |
+                  sudo apt-get update
+                  sudo apt-get install -y libomp-dev
+                  echo "OpenMP_ROOT=/usr/lib/llvm-*/lib/cmake/openmp" >> $GITHUB_ENV
+
+            - name: Set up OpenMP on macOS
               if: runner.os == 'macOS'
               run: |
                   brew install libomp
                   echo "OpenMP_ROOT=$(brew --prefix libomp)" >> $GITHUB_ENV
+                  echo "CFLAGS=-I$(brew --prefix libomp)/include -Xpreprocessor -fopenmp" >> $GITHUB_ENV
+                  echo "CXXFLAGS=-I$(brew --prefix libomp)/include -Xpreprocessor -fopenmp" >> $GITHUB_ENV
+                  echo "LDFLAGS=-L$(brew --prefix libomp)/lib -lomp" >> $GITHUB_ENV
+
+            - name: Set up OpenMP on Windows
+              if: runner.os == 'Windows'
+              run: |
+                  # OpenMP is usually included with MSVC, but we can install additional libraries if needed
+                  choco install -y llvm
+                  echo "OpenMP_ROOT=C:\Program Files\LLVM" >> $env:GITHUB_ENV
 
             - name: Build wheels
               uses: pypa/cibuildwheel@v2.22
               env:
-                  CIBW_BUILD: cp39-* cp310-* cp311-* cp312-* cp313-*
+                  CIBW_BUILD: ${{ matrix.python }}-*
                   CIBW_SKIP: "*-musllinux* *i686* *win32*"
 
-                  # Global build requirements
-                  CIBW_BEFORE_ALL: >
-                      pip install scikit-build-core pybind11
-
-                  # macOS specific setup - using the env var we set
-                  CIBW_ENVIRONMENT_MACOS: >
+                  # Pass the OpenMP environment variables
+                  CIBW_ENVIRONMENT: >
                       CMAKE_ARGS="-DCMAKE_BUILD_TYPE=Release -DOpenMP_ROOT=$OpenMP_ROOT"
-                      CFLAGS="-I$OpenMP_ROOT/include -Xpreprocessor -fopenmp"
-                      CXXFLAGS="-I$OpenMP_ROOT/include -Xpreprocessor -fopenmp"
-                      LDFLAGS="-L$OpenMP_ROOT/lib -lomp"
-
-                  # Linux specific (if needed)
-                  CIBW_BEFORE_ALL_LINUX: >
-                      yum install -y openmp-devel || apt-get install -y libomp-dev
+                      CFLAGS="$CFLAGS"
+                      CXXFLAGS="$CXXFLAGS"
+                      LDFLAGS="$LDFLAGS"
 
             - name: Store wheels
               uses: actions/upload-artifact@v4
               with:
-                  name: wheels-${{ matrix.os }}
+                  name: wheels-${{ runner.os }}-${{ matrix.python }}
                   path: wheelhouse/*.whl
 
     publish:
@@ -60,5 +67,10 @@ jobs:
                   merge-multiple: true
                   path: dist
 
+            - name: Display structure of downloaded files
+              run: ls -R dist/
+
             - name: Publish to PyPI
               uses: pypa/gh-action-pypi-publish@release/v1
+              with:
+                  packages-dir: dist/
