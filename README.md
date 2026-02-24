@@ -1,25 +1,13 @@
 # colss
 
-colss is a lightweight expression evaluator for NumPy, Pandas, and Polars. It simplifies mathematical expressions while preserving memory efficiency and execution speed through a compiled C++ backend.
+colss is a lightweight expression evaluator for NumPy, Pandas, and Polars. It simplifies mathematical expressions while preserving memory efficiency and execution speed.
 
 ---
 
 ## Installation
 
-Build using CMake:
-
 ```
-mkdir build
-cd build
-cmake ..
-make
-```
-
-Or build a Python wheel:
-
-```
-python -m build
-pip install dist/colss-*.whl
+pip install colss
 ```
 
 ---
@@ -90,7 +78,7 @@ colss.mean("a+10")
 
 ---
 
-## sigma (Standard Deviation)
+## sigma (sum)
 
 ```
 import numpy as np
