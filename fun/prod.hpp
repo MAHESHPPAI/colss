@@ -1,6 +1,6 @@
 
 #pragma once
-#include "../include/exprtk.hpp"
+#include "../include/eval.hpp"
 #include <omp.h>
 #include <pybind11/numpy.h>
 #include <pybind11/pytypes.h>
