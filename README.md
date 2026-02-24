@@ -121,7 +121,7 @@ colss.prod("a+1")
 Arithmetic:
 
 ```
-+  -  *  /  ^
++  -  *  /  ^ %
 ```
 
 Comparison:
@@ -133,7 +133,7 @@ Comparison:
 Logical:
 
 ```
-&&  ||
+and  or not
 ```
 
 Ternary:
