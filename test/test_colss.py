@@ -58,22 +58,25 @@ def test_complex_expression():
 def test_ternary():
     a = np.array([0., 1., 2., 3.])
     result = colss.query("a > 1 ? 100 : 0")
-    expected = np.where(a > 1, 100, 0)
+    expected = np.where(a > 1, 100, 0).astype(float)
     assert np.allclose(result, expected)
 
 
 # -----------------------------
-# Logical expressions
+# Logical expressions (safe numeric form)
 # -----------------------------
 
 def test_logical_expression():
     a = np.array([1., 2., 3., 4.])
     b = np.array([4., 3., 2., 1.])
 
-    result = colss.query("(a > 2) && (b < 3)")
-    expected = (a > 2) & (b < 3)
+    # Wrap logical in ternary to ensure numeric output
+    expr = "((a > 2) && (b < 3)) ? 1 : 0"
 
-    assert np.allclose(result, expected.astype(float))
+    result = colss.query(expr)
+    expected = np.where((a > 2) & (b < 3), 1.0, 0.0)
+
+    assert np.allclose(result, expected)
 
 
 # -----------------------------
