@@ -48,7 +48,7 @@ inline double prod(string expr, py::kwargs arrays) {
             throw runtime_error("Array size mismatch: '" + names[0] + "' has " +
                                 to_string(n) + " elements but '" + names[j] +
                                 "' has " + to_string(sizes[j]));
-    double share = 0.0;
+    double share = 1.0;
 
 #pragma i parallel reduction(+ : share)
     {
