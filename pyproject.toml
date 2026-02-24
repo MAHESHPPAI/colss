@@ -5,6 +5,6 @@ build-backend = "scikit_build_core.build"
 [project]
 name = "colss"
 version = "0.1.0"
-description = "C++ accelerated CSV engine"
+description = "Less verbose Mathematical exp evaluator for pandas,numpy and polar"
 authors = [{name = "Siva Prasad A"}]
 requires-python = ">=3.8"
