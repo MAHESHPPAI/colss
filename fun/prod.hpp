@@ -1,5 +1,7 @@
 
 #pragma once
+
+#include "../include/compact.hpp"
 #include "../include/eval.hpp"
 #include <omp.h>
 #include <pybind11/numpy.h>
@@ -50,7 +52,7 @@ inline double prod(string expr, py::kwargs arrays) {
                                 "' has " + to_string(sizes[j]));
     double share = 1.0;
 
-#pragma i parallel reduction(+ : share)
+#pragma parallel reduction(+ : share)
     {
         exprtk::symbol_table<T> symbol_table;
         exprtk::expression<T> expression;

@@ -3,6 +3,7 @@ on:
     push:
         tags:
             - "v*"
+
 jobs:
     build:
         runs-on: ${{ matrix.os }}
@@ -10,14 +11,17 @@ jobs:
             matrix:
                 os: [ubuntu-latest, windows-latest, macos-latest]
                 python: [cp39, cp310, cp311, cp312, cp313]
+
         steps:
             - uses: actions/checkout@v4
+
             - name: Set up OpenMP on Linux
               if: runner.os == 'Linux'
               run: |
                   sudo apt-get update
                   sudo apt-get install -y libomp-dev
                   echo "OpenMP_ROOT=/usr/lib/llvm-*/lib/cmake/openmp" >> $GITHUB_ENV
+
             - name: Set up OpenMP on macOS
               if: runner.os == 'macOS'
               run: |
@@ -26,39 +30,40 @@ jobs:
                   echo "CFLAGS=-I$(brew --prefix libomp)/include -Xpreprocessor -fopenmp" >> $GITHUB_ENV
                   echo "CXXFLAGS=-I$(brew --prefix libomp)/include -Xpreprocessor -fopenmp" >> $GITHUB_ENV
                   echo "LDFLAGS=-L$(brew --prefix libomp)/lib -lomp" >> $GITHUB_ENV
-                  # Set macOS deployment target to match libomp
                   echo "MACOSX_DEPLOYMENT_TARGET=15.0" >> $GITHUB_ENV
+
             - name: Set up OpenMP on Windows
               if: runner.os == 'Windows'
               run: |
-                  # No additional setup needed - CMakeLists.txt handles OpenMP SIMD flags
-                  echo "OpenMP is built into MSVC"
+                  echo "OpenMP is built into MSVC; no extra install required"
+
             - name: Build wheels
               uses: pypa/cibuildwheel@v2.22
               env:
                   CIBW_BUILD: ${{ matrix.python }}-*
                   CIBW_SKIP: "*-musllinux* *i686* *win32*"
-                  # Set macOS deployment target for all macOS builds
+                  # macOS environment (passed into cibuildwheel build env)
                   CIBW_ENVIRONMENT_MACOS: >
                       MACOSX_DEPLOYMENT_TARGET=15.0
-                      CMAKE_ARGS="-DCMAKE_BUILD_TYPE=Release -DOpenMP_ROOT=$OpenMP_ROOT"
+                      CMAKE_ARGS="-DCMAKE_BUILD_TYPE=Release -DOpenMP_ROOT=$OpenMP_ROOT -DPYBIND11_FINDPYTHON=ON"
                       CFLAGS="$CFLAGS"
                       CXXFLAGS="$CXXFLAGS"
                       LDFLAGS="$LDFLAGS"
-                  # For Linux
+                  # Linux environment
                   CIBW_ENVIRONMENT_LINUX: >
-                      CMAKE_ARGS="-DCMAKE_BUILD_TYPE=Release -DOpenMP_ROOT=$OpenMP_ROOT"
+                      CMAKE_ARGS="-DCMAKE_BUILD_TYPE=Release -DOpenMP_ROOT=$OpenMP_ROOT -DPYBIND11_FINDPYTHON=ON"
                       CFLAGS="$CFLAGS"
                       CXXFLAGS="$CXXFLAGS"
                       LDFLAGS="$LDFLAGS"
-                  # For Windows - minimal flags, let CMake handle OpenMP SIMD
+                  # Windows environment - explicitly set pybind11 python detection too
                   CIBW_ENVIRONMENT_WINDOWS: >
-                      CMAKE_ARGS="-DCMAKE_BUILD_TYPE=Release"
+                      CMAKE_ARGS="-DCMAKE_BUILD_TYPE=Release -DPYBIND11_FINDPYTHON=ON -DOpenMP_ROOT=$OpenMP_ROOT"
             - name: Store wheels
               uses: actions/upload-artifact@v4
               with:
                   name: wheels-${{ runner.os }}-${{ matrix.python }}
                   path: wheelhouse/*.whl
+
     publish:
         needs: build
         runs-on: ubuntu-latest
@@ -70,8 +75,10 @@ jobs:
                   pattern: wheels-*
                   merge-multiple: true
                   path: dist
+
             - name: Display structure of downloaded files
               run: ls -R dist/
+
             - name: Publish to PyPI
               uses: pypa/gh-action-pypi-publish@release/v1
               with:

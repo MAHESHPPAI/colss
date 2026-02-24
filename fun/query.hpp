@@ -1,5 +1,7 @@
 
 #pragma once
+
+#include "../include/compact.hpp"
 #include "../include/eval.hpp"
 #include <omp.h>
 #include <pybind11/numpy.h>
