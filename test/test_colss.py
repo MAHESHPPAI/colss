@@ -99,3 +99,22 @@ def test_sigma_complex():
     expected = np.sum(a * b + 3)
 
     assert np.isclose(result, expected)
+
+
+def test_var_basic():
+    a = np.array([1, 2, 3, 4, 5], dtype=np.float64)
+
+    expected = np.var(a)
+    result = colss.var("a")
+
+    assert np.isclose(result, expected)
+
+
+def test_sd_basic():
+    a = np.array([1, 2, 3, 4, 5], dtype=np.float64)
+
+    expected = np.std(a)
+    result = colss.sd("a")
+
+    assert np.isclose(result, expected)
+

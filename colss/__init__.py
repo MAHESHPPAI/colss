@@ -4,6 +4,8 @@ from colss._colss import sigma as _sigma
 from colss._colss import prod as _prod
 from colss._colss import mean as _mean
 from colss._colss import query as _query
+from colss._colss import sd as _sd
+from colss._colss import var as _var
 
 def _collect_vars(expr: str):
     frame = inspect.currentframe()
@@ -41,3 +43,11 @@ def mean(expr: str) -> float:
 def query(expr: str) -> np.ndarray:
     arrays, scalars = _collect_vars(expr)
     return _query(expr, scalars, **arrays)
+
+def sd(expr: str) -> float:
+    arrays, scalars = _collect_vars(expr)
+    return _sd(expr, scalars, **arrays)
+
+def var(expr: str) -> float:
+    arrays, scalars = _collect_vars(expr)
+    return _var(expr, scalars, **arrays)
