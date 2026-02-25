@@ -118,3 +118,29 @@ def test_sd_basic():
 
     assert np.isclose(result, expected)
 
+# -----------------------------
+# Median Tests
+# -----------------------------
+
+def test_median_basic_odd():
+    a = np.array([1., 3., 2., 5., 4.])
+    expected = np.median(a)
+    result = colss.median("a")
+    assert np.isclose(result, expected)
+
+
+def test_median_basic_even():
+    a = np.array([1., 2., 3., 4.])
+    expected = np.median(a)
+    result = colss.median("a")
+    assert np.isclose(result, expected)
+
+
+def test_median_expression():
+    a = np.array([1., 2., 3., 4.])
+    b = np.array([4., 3., 2., 1.])
+
+    result = colss.median("a + b")
+    expected = np.median(a + b)
+
+    assert np.isclose(result, expected)
