@@ -1,50 +1,52 @@
 name: PR Tests
 
 on:
-    push:
-        branches:
-            - master
-    pull_request:
-        types: [opened, synchronize, reopened]
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+    branches:
+      - main
+      - master
+    types: [opened, synchronize, reopened]
 
 jobs:
-    build-and-test:
-        runs-on: ubuntu-latest
+  build-and-test:
+    runs-on: ubuntu-latest
 
-        steps:
-            # Checkout repository
-            - name: Checkout
-              uses: actions/checkout@v4
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-            # Setup Python
-            - name: Setup Python
-              uses: actions/setup-python@v4
-              with:
-                  python-version: "3.11"
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
 
-            # Install system dependencies for C++ build
-            - name: Install system dependencies
-              run: |
-                  sudo apt-get update
-                  sudo apt-get install -y build-essential cmake ninja-build libomp-dev
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential cmake ninja-build libomp-dev python3-dev python3-distutils
 
-            # Install Python dependencies
-            - name: Install Python dependencies
-              run: |
-                  python -m pip install --upgrade pip
-                  pip install numpy pybind11 pytest build numexpr pandas
+      - name: Install Python build tools
+        run: |
+          python -m pip install --upgrade pip setuptools wheel build
 
-            # Build wheel
-            - name: Build package
-              run: |
-                  python -m build
+      - name: Install Python dependencies (tests)
+        run: |
+          pip install numpy pybind11 pytest numexpr pandas
 
-            # Install built wheel
-            - name: Install package
-              run: |
-                  pip install dist/*.whl
+      - name: Build package
+        run: |
+          python -m build
 
-            # Run test_colss.py explicitly
-            - name: Run tests
-              run: |
-                  pytest -v
+      - name: Install built wheel
+        run: |
+          pip install dist/*.whl
+
+      - name: Run tests
+        run: |
+          pytest -v
